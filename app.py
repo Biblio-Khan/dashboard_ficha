@@ -97,8 +97,7 @@ if password == st.secrets["admin_senha"]:
                 with st.expander("Ver dados brutos do Histórico"):
                     st.write(df_hist.columns)
                     st.dataframe(df_hist)
-                
-                st.markdown("### 📈 Histórico de Movimentações")
+            
                 
                 if 'Email' in df_hist.columns and 'Quantidade' in df_hist.columns:
                     st.write("Ranking de Usuários que Mais Recarregam (Volume):")
