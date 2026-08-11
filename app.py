@@ -23,7 +23,7 @@ st.title("🛠️ Painel de Gestão de Créditos")
 
 # --- LOGIN SIMPLES ---
 password = st.sidebar.text_input("Senha Admin:", type="password")
-if password == "1234": # TROQUE SUA SENHA AQUI
+if password == st.secrets["admin_senha"]:
     try:
         sheet = conectar_planilha()
         df = pd.DataFrame(sheet.get_all_records())
