@@ -5,55 +5,104 @@ from datetime import datetime
 import json
 
 # Configuração da página
-st.set_page_config(page_title="Admin - Créditos", page_icon="🛠️")
+st.set_page_config(page_title="Admin - Créditos", page_icon="🛠️", layout="wide")
 
-# Função de Conexão
+# Função de Conexão com a Planilha
 def conectar_planilha():
-    # Se estiver no Streamlit Cloud, pegamos dos Secrets
+    # Se estiver no Streamlit Cloud, pega dos Secrets
     if "gcp_service_account" in st.secrets:
         creds_dict = dict(st.secrets["gcp_service_account"])
         gc = gspread.service_account_from_dict(creds_dict)
     else:
         # Se estiver rodando local, usa o arquivo json
         gc = gspread.service_account(filename='credenciais.json')
-    
-    return gc.open("créditos_fichajud").worksheet("Página1")
+        
+    return gc.open("créditos_fichajud")
 
-st.title("🛠️ Painel de Gestão de Créditos")
+st.title("🛠️ Painel de Gestão de Créditos e Análises")
 
 # --- LOGIN SIMPLES ---
 password = st.sidebar.text_input("Senha Admin:", type="password")
+
 if password == st.secrets["admin_senha"]:
     try:
-        sheet = conectar_planilha()
-        df = pd.DataFrame(sheet.get_all_records())
+        sh = conectar_planilha()
+        sheet_principal = sh.worksheet("Página1")
+        df = pd.DataFrame(sheet_principal.get_all_records())
         
-        st.dataframe(df)
+        # --- SEÇÃO 1: DADOS E AÇÕES RÁPIDAS ---
+        st.subheader("📋 Usuários Cadastrados")
+        st.dataframe(df, use_container_width=True)
         
-        col1, col2 = st.columns(2)
+        st.divider()
+        st.subheader("⚡ Ações Rápidas")
+        
         email_input = st.text_input("E-mail do usuário")
+        qtd = st.number_input("Créditos para recarga", value=10, min_value=1)
         
-        with col1:
-            if st.button("Presentear 4 Créditos (Novo)"):
-                if sheet.find(email_input.lower().strip()):
-                    st.warning("Usuário já existe.")
-                else:
-                    sheet.append_row([email_input.lower().strip(), 4, datetime.now().strftime("%d/%m/%Y")])
-                    st.success("Usuário criado com 4 créditos!")
-                    st.rerun()
-
-        with col2:
-            qtd = st.number_input("Créditos para recarga", value=10)
-            if st.button("Recarregar Créditos"):
-                celula = sheet.find(email_input.lower().strip())
+        if st.button("Recarregar Créditos"):
+            if not email_input.strip():
+                st.error("Digite um e-mail válido.")
+            else:
+                celula = sheet_principal.find(email_input.lower().strip())
                 if celula:
-                    saldo_atual = int(sheet.cell(celula.row, 2).value or 0)
-                    sheet.update_cell(celula.row, 2, saldo_atual + qtd)
-                    st.success("Recarga feita!")
+                    saldo_atual = int(sheet_principal.cell(celula.row, 2).value or 0)
+                    novo_saldo = saldo_atual + qtd
+                    
+                    # 1. Atualiza o saldo na Página1
+                    sheet_principal.update_cell(celula.row, 2, novo_saldo)
+                    
+                    # 2. Registra na aba Histórico automaticamente
+                    try:
+                        aba_hist = sh.worksheet("Historico")
+                        aba_hist.append_row([
+                            datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            email_input.lower().strip(),
+                            qtd,
+                            saldo_atual,
+                            novo_saldo
+                        ])
+                    except Exception as e:
+                        st.warning(f"Aba 'Historico' não encontrada ou com erro: {e}. A recarga foi feita, mas não foi logada.")
+                    
+                    st.success(f"Recarga feita! Saldo do usuário foi de {saldo_atual} para {novo_saldo}.")
                     st.rerun()
                 else:
                     st.error("Usuário não encontrado.")
+
+        # --- SEÇÃO 2: DASHBOARD DE ANÁLISE E VENDAS ---
+        st.divider()
+        st.subheader("📊 Relatórios e Análise de Usuários")
+        
+        # Métricas gerais da Página1
+        if not df.empty and len(df.columns) >= 2:
+            col_creditos_nome = df.columns[1]
+            df[col_creditos_nome] = pd.to_numeric(df[col_creditos_nome], errors='coerce').fillna(0)
+            
+            m1, m2 = st.columns(2)
+            with m1:
+                st.metric("Total de Usuários", len(df))
+            with m2:
+                st.metric("Créditos Totais em Circulação", int(df[col_creditos_nome].sum()))
+
+        # Leitura da aba Histórico para gráficos
+        try:
+            aba_hist = sh.worksheet("Historico")
+            df_hist = pd.DataFrame(aba_hist.get_all_records())
+            
+            if not df_hist.empty:
+                st.markdown("### 📈 Histórico de Movimentações")
+                
+                if 'Email' in df_hist.columns and 'Quantidade' in df_hist.columns:
+                    st.write("Ranking de Usuários que Mais Recarregam (Volume):")
+                    ranking = df_hist.groupby('Email')['Quantidade'].sum().sort_values(ascending=False)
+                    st.bar_chart(ranking)
+            else:
+                st.info("A aba 'Historico' ainda está vazia. As próximas recargas aparecerão aqui.")
+        except Exception:
+            st.info("Dica: Crie uma aba chamada 'Historico' na sua planilha com as colunas [Data, Email, Quantidade, Saldo_Anterior, Novo_Saldo] para ver os gráficos de vendas.")
+
     except Exception as e:
-        st.error(f"Erro ao conectar: {e}")
+        st.error(f"Erro ao conectar ou carregar dados da planilha: {e}")
 else:
-    st.info("Insira a senha na barra lateral para começar.")
+    st.info("Insira a senha correta na barra lateral para acessar o painel.")
