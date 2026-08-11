@@ -19,7 +19,7 @@ def conectar_planilha():
         
     return gc.open("créditos_fichajud")
 
-st.title("🛠️ Painel de Gestão de Créditos e Análises")
+st.title("Painel de Gestão")
 
 # --- LOGIN SIMPLES ---
 password = st.sidebar.text_input("Senha Admin:", type="password")
@@ -31,11 +31,11 @@ if password == st.secrets["admin_senha"]:
         df = pd.DataFrame(sheet_principal.get_all_records())
         
         # --- SEÇÃO 1: DADOS E AÇÕES RÁPIDAS ---
-        st.subheader("📋 Usuários Cadastrados")
+        st.subheader("Usuários Cadastrados")
         st.dataframe(df, use_container_width=True)
         
         st.divider()
-        st.subheader("⚡ Ações Rápidas")
+        st.subheader("⚡ Recarga")
         
         email_input = st.text_input("E-mail do usuário")
         qtd = st.number_input("Créditos para recarga", value=10, min_value=1)
@@ -72,7 +72,7 @@ if password == st.secrets["admin_senha"]:
 
         # --- SEÇÃO 2: DASHBOARD DE ANÁLISE E VENDAS ---
         st.divider()
-        st.subheader("📊 Relatórios e Análise de Usuários")
+        st.subheader("Relatórios e Análise de Usuários")
         
         # Métricas gerais da Página1
         if not df.empty and len(df.columns) >= 2:
