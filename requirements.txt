@@ -1,4 +1,5 @@
+firebase-admin
 streamlit
 gspread
 pandas
-firebase-admin
+
