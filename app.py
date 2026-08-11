@@ -88,7 +88,8 @@ if password == st.secrets["admin_senha"]:
         # Leitura da aba Histórico para gráficos
         try:
             aba_hist = sh.worksheet("Historico")
-            dados_hist = aba_hist.get_all_records()
+        except Exception as e:
+            st.error(f"Erro: {e}")
             
             if dados_hist:
                 df_hist = pd.DataFrame(dados_hist)
