@@ -88,21 +88,26 @@ if password == st.secrets["admin_senha"]:
         # Leitura da aba Histórico para gráficos
         try:
             aba_hist = sh.worksheet("Historico")
-            df_hist = pd.DataFrame(aba_hist.get_all_records())
+            dados_hist = aba_hist.get_all_records()
             
-            if not df_hist.empty:
+            if dados_hist:
+                df_hist = pd.DataFrame(dados_hist)
+                
+                # DEBUG VISUAL: Isso vai te mostrar o que está vindo da planilha
+                with st.expander("Ver dados brutos do Histórico"):
+                    st.write(df_hist.columns) # Mostra como ele enxergou as colunas
+                    st.dataframe(df_hist)
+                
                 st.markdown("### 📈 Histórico de Movimentações")
                 
+                # Ajuste: Use os nomes exatos que aparecerem no "Ver dados brutos" acima
                 if 'Email' in df_hist.columns and 'Quantidade' in df_hist.columns:
                     st.write("Ranking de Usuários que Mais Recarregam (Volume):")
                     ranking = df_hist.groupby('Email')['Quantidade'].sum().sort_values(ascending=False)
                     st.bar_chart(ranking)
+                else:
+                    st.error(f"Colunas esperadas (Email, Quantidade) não foram encontradas. Colunas lidas: {df_hist.columns.tolist()}")
             else:
-                st.info("A aba 'Historico' ainda está vazia. As próximas recargas aparecerão aqui.")
-        except Exception:
-            st.info("Dica: Crie uma aba chamada 'Historico' na sua planilha com as colunas [Data, Email, Quantidade, Saldo_Anterior, Novo_Saldo] para ver os gráficos de vendas.")
-
-    except Exception as e:
-        st.error(f"Erro ao conectar ou carregar dados da planilha: {e}")
-else:
-    st.info("Insira a senha correta na barra lateral para acessar o painel.")
+                st.info("A aba 'Historico' está vazia.")
+        except Exception as e:
+            st.error(f"Erro ao ler histórico: {e}")
