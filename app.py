@@ -19,7 +19,7 @@ def conectar_planilha():
         
     return gc.open("créditos_fichajud")
 
-st.title("Painel de Gestão")
+st.title("🛠️ Painel de Gestão de Créditos e Análises")
 
 # --- LOGIN SIMPLES ---
 password = st.sidebar.text_input("Senha Admin:", type="password")
@@ -31,11 +31,11 @@ if password == st.secrets["admin_senha"]:
         df = pd.DataFrame(sheet_principal.get_all_records())
         
         # --- SEÇÃO 1: DADOS E AÇÕES RÁPIDAS ---
-        st.subheader("Usuários Cadastrados")
+        st.subheader("📋 Usuários Cadastrados")
         st.dataframe(df, use_container_width=True)
         
         st.divider()
-        st.subheader("⚡ Recarga")
+        st.subheader("⚡ Ações Rápidas")
         
         email_input = st.text_input("E-mail do usuário")
         qtd = st.number_input("Créditos para recarga", value=10, min_value=1)
@@ -72,7 +72,7 @@ if password == st.secrets["admin_senha"]:
 
         # --- SEÇÃO 2: DASHBOARD DE ANÁLISE E VENDAS ---
         st.divider()
-        st.subheader("Relatórios e Análise de Usuários")
+        st.subheader("📊 Relatórios e Análise de Usuários")
         
         # Métricas gerais da Página1
         if not df.empty and len(df.columns) >= 2:
@@ -88,27 +88,30 @@ if password == st.secrets["admin_senha"]:
         # Leitura da aba Histórico para gráficos
         try:
             aba_hist = sh.worksheet("Historico")
-        except Exception as e:
-            st.error(f"Erro: {e}")
+            dados_hist = aba_hist.get_all_records()
             
             if dados_hist:
                 df_hist = pd.DataFrame(dados_hist)
                 
-                # DEBUG VISUAL: Isso vai te mostrar o que está vindo da planilha
+                # Expander para ver os dados brutos e conferir as colunas se necessário
                 with st.expander("Ver dados brutos do Histórico"):
-                    st.write(df_hist.columns) # Mostra como ele enxergou as colunas
+                    st.write(df_hist.columns)
                     st.dataframe(df_hist)
                 
                 st.markdown("### 📈 Histórico de Movimentações")
                 
-                # Ajuste: Use os nomes exatos que aparecerem no "Ver dados brutos" acima
                 if 'Email' in df_hist.columns and 'Quantidade' in df_hist.columns:
                     st.write("Ranking de Usuários que Mais Recarregam (Volume):")
                     ranking = df_hist.groupby('Email')['Quantidade'].sum().sort_values(ascending=False)
                     st.bar_chart(ranking)
                 else:
-                    st.error(f"Colunas esperadas (Email, Quantidade) não foram encontradas. Colunas lidas: {df_hist.columns.tolist()}")
+                    st.warning("As colunas 'Email' e 'Quantidade' precisam estar exatamente com esses nomes na primeira linha da aba Historico.")
             else:
-                st.info("A aba 'Historico' está vazia.")
+                st.info("A aba 'Historico' está vazia no momento.")
         except Exception as e:
             st.error(f"Erro ao ler histórico: {e}")
+
+    except Exception as e:
+        st.error(f"Erro ao conectar ou carregar dados da planilha: {e}")
+else:
+    st.info("Insira a senha correta na barra lateral para acessar o painel.")
