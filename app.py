@@ -97,25 +97,27 @@ if password == st.secrets["admin_senha"]:
                 if dados_hist:
                     df_hist = pd.DataFrame(dados_hist)
                     
+                    # Padroniza os nomes das colunas automaticamente (remove espaços e converte para minúsculas)
+                    df_hist.columns = [str(col).strip().lower() for col in df_hist.columns]
+                    
                     # Expander para conferência dos dados brutos
                     with st.expander("Ver dados brutos do Histórico"):
-                        st.write(df_hist.columns)
+                        st.write("Colunas detectadas:", df_hist.columns.tolist())
                         st.dataframe(df_hist)
                     
                     st.markdown("### 📈 Histórico de Movimentações")
                     
-                    if 'Email' in df_hist.columns and 'Quantidade' in df_hist.columns:
+                    # Procura pelas colunas independentemente de maiúsculas/minúsculas
+                    col_email = next((c for c in df_hist.columns if 'email' in c), None)
+                    col_qtd = next((c for c in df_hist.columns if 'quant' in c or 'qtd' in c or 'credito' in c), None)
+                    
+                    if col_email and col_qtd:
                         st.write("Ranking de Usuários que Mais Recarregam (Volume):")
-                        ranking = df_hist.groupby('Email')['Quantidade'].sum().sort_values(ascending=False)
+                        ranking = df_hist.groupby(col_email)[col_qtd].sum().sort_values(ascending=False)
                         st.bar_chart(ranking)
                     else:
-                        st.warning("As colunas 'Email' e 'Quantidade' precisam estar exatamente com esses nomes na primeira linha da aba Historico.")
+                        st.warning("Não foi possível identificar automaticamente as colunas de 'Email' e 'Quantidade' na sua aba Historico. Verifique os nomes no expander acima.")
                 else:
                     st.info("A aba 'Historico' está vazia no momento. Faça uma recarga para gerar dados.")
             except Exception as e:
                 st.error(f"Erro ao ler histórico: {e}")
-
-    except Exception as e:
-        st.error(f"Erro ao conectar ou carregar dados da planilha: {e}")
-else:
-    st.info("Insira a senha correta na barra lateral para acessar o painel.")
