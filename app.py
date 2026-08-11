@@ -97,7 +97,7 @@ if password == st.secrets["admin_senha"]:
                 if dados_hist:
                     df_hist = pd.DataFrame(dados_hist)
                     
-                    # Padroniza os nomes das colunas automaticamente (remove espaços e converte para minúsculas)
+                    # Padroniza os nomes das colunas automaticamente
                     df_hist.columns = [str(col).strip().lower() for col in df_hist.columns]
                     
                     # Expander para conferência dos dados brutos
@@ -107,7 +107,6 @@ if password == st.secrets["admin_senha"]:
                     
                     st.markdown("### 📈 Histórico de Movimentações")
                     
-                    # Procura pelas colunas independentemente de maiúsculas/minúsculas
                     col_email = next((c for c in df_hist.columns if 'email' in c), None)
                     col_qtd = next((c for c in df_hist.columns if 'quant' in c or 'qtd' in c or 'credito' in c), None)
                     
@@ -121,3 +120,8 @@ if password == st.secrets["admin_senha"]:
                     st.info("A aba 'Historico' está vazia no momento. Faça uma recarga para gerar dados.")
             except Exception as e:
                 st.error(f"Erro ao ler histórico: {e}")
+
+    except Exception as e:
+        st.error(f"Erro ao conectar ou carregar dados da planilha: {e}")
+else:
+    st.info("Insira a senha correta na barra lateral para acessar o painel.")
