@@ -17,7 +17,7 @@ def conectar_planilha():
         # Se estiver rodando local, usa o arquivo json
         gc = gspread.service_account(filename='credenciais.json')
     
-    return gc.open("NOME_DA_SUA_PLANILHA").worksheet("Página1")
+    return gc.open("créditos_fichajud").worksheet("Página1")
 
 st.title("🛠️ Painel de Gestão de Créditos")
 
